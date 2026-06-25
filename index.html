@@ -1719,5 +1719,414 @@ if('ontouchstart' in window||navigator.maxTouchPoints>0){const h=document.getEle
 // first run → onboarding
 try{if(!localStorage.getItem('mmx_seen'))setTimeout(()=>openOnboard(true),300);}catch(e){}
 </script>
+<script>
+// ── DANCER MOVE MATRIX — DEMO GUIDED TOUR ────────────────────────────────────
+(function() {
+  // Only run on first visit to demo
+  if (localStorage.getItem('mmx_tour_seen')) return;
+
+  const AMBER  = '#F5C518';
+  const VIO    = '#6D28D9';
+  const GRN    = '#2BB673';
+  const DARK   = '#0D0D0D';
+  const WHITE  = '#FFFFFF';
+  const BG2    = '#1A1A2E';
+
+  const STEPS = [
+    {
+      title: 'Welcome to Dancer Move Matrix™',
+      body: 'This quick tour walks you through everything in about 2 minutes. You can skip at any time using the button below, or press Escape. Tap Next to begin.',
+      target: null,
+      position: 'center',
+      action: null,
+    },
+    {
+      title: 'Your Move Grid',
+      body: 'This is the Matrix — the heart of the app. Every move you know is listed across the top as columns and down the left as rows. Where a row and column meet is a transition between those two moves.',
+      target: 'mat',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'Green Cells = Linked Combos',
+      body: 'Green cells with a checkmark mean you\'ve hit that combo. Empty cells are transitions you haven\'t tried yet. Every empty cell is a gap in your game — your personal training map.',
+      target: 'mat',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'Click Any Cell to Link a Combo',
+      body: 'Try it — click any empty cell in the grid and it turns green. Click it again to unmark it. Right-click any cell to add a note about that specific transition, like "catch on the last rotation" or "use momentum from step 4."',
+      target: 'mat',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'Your Progress Counter',
+      body: 'Up here you can see how many moves are in your grid, how many combos you\'ve linked, how many are still to go, and your overall completion percentage. Watch it grow as you train.',
+      target: 'hstats',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'Your App Title',
+      body: 'See "DANCER MOVE MATRIX" at the top left? Click it and type anything — your name, your crew, your studio. This title appears on every printed poster and share code you generate.',
+      target: 'titleEl',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'Focus on One Move at a Time',
+      body: 'The dropdown at the top right of the grid says "Focus a move." Select any move and the grid filters to show only that move\'s row — a clean, scrollable list perfect for phones or focused training sessions.',
+      target: 'focusSelect',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'The Sidebar — Your Control Panel',
+      body: 'Click the menu icon (☰) at the top left to open the sidebar. This is where you add new moves, set difficulty and energy ratings, change the theme, manage backups, and access the Legacy dedication panel.',
+      target: 'sidebar',
+      position: 'right',
+      action: () => {
+        const sb = document.getElementById('sidebar');
+        if (sb && !sb.classList.contains('open')) {
+          if (typeof toggleSidebar === 'function') toggleSidebar();
+        }
+      },
+    },
+    {
+      title: 'Adding Your Own Moves',
+      body: 'In the sidebar, type a move name, choose its category (Toprock, Footwork, Freezes, Power Moves — or create your own), set the side and direction, add difficulty and energy ratings, then click Add Move. It appears in the grid instantly.',
+      target: 'sidebar',
+      position: 'right',
+      action: null,
+    },
+    {
+      title: 'Themes — Change the Look',
+      body: 'See the colored circles near the top of the sidebar? Those are your five themes — Dark, Light, Crimson, Cyber, and Forest. Click any to instantly change the entire look of the app. Your choice saves automatically.',
+      target: 'sidebar',
+      position: 'right',
+      action: null,
+    },
+    {
+      title: 'Now Let\'s Try the Set Builder',
+      body: 'Click the SET BUILDER tab at the top. This is where you sequence your moves into a full set — a battle run, a class demo, a warm-up routine. Let\'s go there now.',
+      target: 'tab-setbuilder',
+      position: 'below',
+      action: () => {
+        const btn = [...document.querySelectorAll('nav.tabs button')]
+          .find(b => b.textContent.trim() === 'SET BUILDER');
+        if (btn) btn.click();
+      },
+    },
+    {
+      title: 'Build a Set',
+      body: 'On the left is your move library. Click any move to add it to your sequence on the right. The app automatically checks every transition — green means it flows cleanly, amber means there\'s a side or direction switch to watch, red means a difficult transition.',
+      target: 'tab-setbuilder',
+      position: 'center',
+      action: null,
+    },
+    {
+      title: 'Difficulty and Energy Ratings',
+      body: 'The bar at the top of your set shows the average difficulty and energy across all your moves. This tells you exactly what a performance will demand before you step on the floor — essential for battle prep.',
+      target: 'set-summary-box',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'Save Unlimited Setlists',
+      body: 'Build a sequence, click Save Set, and give it a name. You can save as many setlists as you want — Battle Set July, Beginner Class Demo, Competition Finals. Load any saved set from the dropdown at the top.',
+      target: 'setlistSelect',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'Now Let\'s See the Poster Tab',
+      body: 'Click the POSTER tab at the top. This is where you print your entire move matrix as a physical poster — with QR codes linking to tutorial videos for every move that has one attached.',
+      target: 'tab-poster',
+      position: 'below',
+      action: () => {
+        const btn = [...document.querySelectorAll('nav.tabs button')]
+          .find(b => b.textContent.trim() === 'POSTER');
+        if (btn) btn.click();
+      },
+    },
+    {
+      title: 'Print-Ready Posters',
+      body: 'The Poster tab generates a full A3 landscape matrix poster and an A4 set sheet. Every move with a YouTube video attached gets a scannable QR code on the poster. Students scan a move\'s QR and the tutorial opens on their phone immediately.',
+      target: 'tab-poster',
+      position: 'center',
+      action: null,
+    },
+    {
+      title: 'Videos Linked to Moves',
+      body: 'In this demo, all 20 moves already have YouTube tutorials attached. In the full version you attach any YouTube URL to any move yourself. Go to the Matrix tab, click a move name, scroll to the Media section, and paste the URL.',
+      target: 'tab-matrix',
+      position: 'below',
+      action: () => {
+        const btn = [...document.querySelectorAll('nav.tabs button')]
+          .find(b => b.textContent.trim() === 'MATRIX');
+        if (btn) btn.click();
+      },
+    },
+    {
+      title: 'Backup, Share and Undo',
+      body: 'In the sidebar under ACTIONS you can download a full backup of your data as a .json file, restore from a backup, and share your entire grid or a single set with anyone using a portable code. The Undo button at the top right steps back up to 40 changes.',
+      target: 'undoBtn',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'The Legacy and Dedication Panel',
+      body: 'In the sidebar under LEGACY, the Dedication and About panel lets you document who this grid belongs to — the dancer\'s name, their lineage, who taught them, their philosophy in their own words, and a note for the next generation. It prints at the bottom of every poster.',
+      target: 'sidebar',
+      position: 'right',
+      action: () => {
+        const sb = document.getElementById('sidebar');
+        if (sb && !sb.classList.contains('open')) {
+          if (typeof toggleSidebar === 'function') toggleSidebar();
+        }
+      },
+    },
+    {
+      title: 'This is the Demo Version',
+      body: 'You are currently using the demo. It resets every time you close and reopen it. Backup, restore, share, and CSV export are locked. Move count is capped at 20. The full version at ko-fi.com/zerohero1 is $14.99 — one-time payment, yours forever, free updates for life.',
+      target: 'demoBanner',
+      position: 'below',
+      action: null,
+    },
+    {
+      title: 'You\'re Ready to Explore',
+      body: 'That\'s everything. Click any cell to link a combo, open the sidebar to add your own moves, build a set, and print a poster. When you\'re ready to start fresh with your own style — get the full version and hit Blank Slate to begin.',
+      target: null,
+      position: 'center',
+      action: null,
+      final: true,
+    },
+  ];
+
+  let currentStep = 0;
+  let overlay, box, spotlight;
+
+  function createTour() {
+    // Dark overlay
+    overlay = document.createElement('div');
+    overlay.id = 'mmxTourOverlay';
+    overlay.style.cssText = `
+      position:fixed;top:0;left:0;width:100vw;height:100vh;
+      background:rgba(0,0,0,0.72);z-index:9000;pointer-events:none;
+      transition:opacity .3s;
+    `;
+
+    // Spotlight hole (cut-out effect via box-shadow)
+    spotlight = document.createElement('div');
+    spotlight.id = 'mmxTourSpotlight';
+    spotlight.style.cssText = `
+      position:fixed;border-radius:6px;z-index:9001;pointer-events:none;
+      box-shadow:0 0 0 9999px rgba(0,0,0,0.72);
+      border:2px solid ${AMBER};
+      transition:all .35s cubic-bezier(.4,0,.2,1);
+      opacity:0;
+    `;
+
+    // Tour box
+    box = document.createElement('div');
+    box.id = 'mmxTourBox';
+    box.style.cssText = `
+      position:fixed;z-index:9100;
+      background:${DARK};border:1.5px solid ${AMBER};
+      border-radius:10px;padding:22px 24px 18px;
+      width:340px;max-width:90vw;
+      box-shadow:0 8px 40px rgba(0,0,0,.7);
+      font-family:'Courier New',monospace;
+      transition:all .3s cubic-bezier(.4,0,.2,1);
+    `;
+
+    box.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+        <div id="mmxTourStep" style="font-size:10px;color:${AMBER};letter-spacing:.1em;font-weight:700"></div>
+        <button id="mmxTourSkip" style="background:none;border:none;color:#666;cursor:pointer;font-size:11px;font-family:inherit;padding:0;letter-spacing:.05em">SKIP TOUR</button>
+      </div>
+      <div id="mmxTourTitle" style="font-size:15px;font-weight:700;color:${WHITE};margin-bottom:8px;line-height:1.3;font-family:sans-serif"></div>
+      <div id="mmxTourBody" style="font-size:12.5px;color:#C8C8C8;line-height:1.65;font-family:sans-serif;margin-bottom:18px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div id="mmxTourDots" style="display:flex;gap:5px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="mmxTourPrev" style="background:none;border:1px solid #444;color:#888;padding:7px 16px;border-radius:5px;cursor:pointer;font-size:12px;font-family:sans-serif">Back</button>
+          <button id="mmxTourNext" style="background:${AMBER};border:none;color:${DARK};padding:7px 20px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700;font-family:sans-serif">Next</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(spotlight);
+    document.body.appendChild(box);
+
+    document.getElementById('mmxTourSkip').addEventListener('click', endTour);
+    document.getElementById('mmxTourNext').addEventListener('click', nextStep);
+    document.getElementById('mmxTourPrev').addEventListener('click', prevStep);
+    document.addEventListener('keydown', handleKey);
+
+    renderStep(0);
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Escape') endTour();
+    if (e.key === 'ArrowRight' || e.key === 'Enter') nextStep();
+    if (e.key === 'ArrowLeft') prevStep();
+  }
+
+  function getRect(targetId) {
+    if (!targetId) return null;
+    const el = document.getElementById(targetId);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) return null;
+    return r;
+  }
+
+  function positionSpotlight(rect) {
+    if (!rect) {
+      spotlight.style.opacity = '0';
+      spotlight.style.width = '0px';
+      spotlight.style.height = '0px';
+      return;
+    }
+    const pad = 8;
+    spotlight.style.opacity = '1';
+    spotlight.style.left   = (rect.left - pad) + 'px';
+    spotlight.style.top    = (rect.top - pad) + 'px';
+    spotlight.style.width  = (rect.width + pad*2) + 'px';
+    spotlight.style.height = (rect.height + pad*2) + 'px';
+  }
+
+  function positionBox(rect, position) {
+    const bw = 340, margin = 14;
+    const vw = window.innerWidth, vh = window.innerHeight;
+
+    // Reset
+    box.style.left = box.style.top = box.style.right = box.style.bottom = '';
+    box.style.transform = '';
+
+    if (!rect || position === 'center') {
+      box.style.left = '50%';
+      box.style.top  = '50%';
+      box.style.transform = 'translate(-50%,-50%)';
+      return;
+    }
+
+    const pad = 12;
+
+    if (position === 'below') {
+      let left = rect.left;
+      let top  = rect.bottom + pad;
+      // clamp horizontally
+      if (left + bw > vw - margin) left = vw - bw - margin;
+      if (left < margin) left = margin;
+      // flip above if off screen
+      if (top + 220 > vh) top = rect.top - 220 - pad;
+      box.style.left = left + 'px';
+      box.style.top  = Math.max(margin, top) + 'px';
+    } else if (position === 'right') {
+      let left = rect.right + pad;
+      let top  = rect.top;
+      if (left + bw > vw - margin) left = rect.left - bw - pad;
+      if (top + 220 > vh) top = vh - 220 - margin;
+      box.style.left = Math.max(margin, left) + 'px';
+      box.style.top  = Math.max(margin, top) + 'px';
+    }
+  }
+
+  function updateDots() {
+    const dots = document.getElementById('mmxTourDots');
+    dots.innerHTML = '';
+    STEPS.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.style.cssText = `width:${i===currentStep?18:6}px;height:6px;border-radius:3px;
+        background:${i===currentStep?AMBER:'#444'};transition:all .2s;`;
+      dots.appendChild(d);
+    });
+  }
+
+  function renderStep(idx) {
+    const step = STEPS[idx];
+    if (!step) return;
+
+    // Run action (open sidebar, switch tab etc)
+    if (step.action) {
+      try { step.action(); } catch(e) {}
+    }
+
+    // Give DOM time to update after actions
+    setTimeout(() => {
+      const rect = getRect(step.target);
+      positionSpotlight(rect);
+      positionBox(rect, step.position);
+
+      document.getElementById('mmxTourStep').textContent =
+        `STEP ${idx+1} OF ${STEPS.length}`;
+      document.getElementById('mmxTourTitle').textContent = step.title;
+      document.getElementById('mmxTourBody').textContent  = step.body;
+
+      const prev = document.getElementById('mmxTourPrev');
+      const next = document.getElementById('mmxTourNext');
+      prev.style.display = idx === 0 ? 'none' : 'block';
+
+      if (step.final) {
+        next.textContent = 'Get Started';
+        next.style.background = GRN;
+      } else {
+        next.textContent = 'Next';
+        next.style.background = AMBER;
+      }
+
+      updateDots();
+    }, step.action ? 400 : 0);
+  }
+
+  function nextStep() {
+    if (currentStep >= STEPS.length - 1) { endTour(); return; }
+    currentStep++;
+    renderStep(currentStep);
+  }
+
+  function prevStep() {
+    if (currentStep <= 0) return;
+    currentStep--;
+    renderStep(currentStep);
+  }
+
+  function endTour() {
+    localStorage.setItem('mmx_tour_seen', '1');
+    // Close sidebar if open
+    const sb = document.getElementById('sidebar');
+    if (sb && sb.classList.contains('open')) {
+      if (typeof toggleSidebar === 'function') toggleSidebar();
+    }
+    // Go back to matrix tab
+    const matBtn = [...document.querySelectorAll('nav.tabs button')]
+      .find(b => b.textContent.trim() === 'MATRIX');
+    if (matBtn) matBtn.click();
+
+    // Fade out and remove
+    overlay.style.opacity = '0';
+    box.style.opacity = '0';
+    spotlight.style.opacity = '0';
+    document.removeEventListener('keydown', handleKey);
+    setTimeout(() => {
+      overlay.remove(); box.remove(); spotlight.remove();
+    }, 350);
+  }
+
+  // Start after preload data settles and page is interactive
+  window.addEventListener('load', () => {
+    setTimeout(createTour, 1200);
+  });
+
+})();
+// ── END DEMO GUIDED TOUR ─────────────────────────────────────────────────────
+
+</script>
+
 </body>
 </html>
